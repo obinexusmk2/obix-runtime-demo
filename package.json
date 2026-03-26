@@ -1,0 +1,28 @@
+{
+  "name": "obix-polygaltic-demo",
+  "version": "1.0.0",
+  "description": "OBIX × LibPolyCall polygaltic demo — pure OBIX runtime, no React/Vue",
+  "type": "module",
+  "scripts": {
+    "bundle": "rollup -c rollup.config.mjs",
+    "bundle:watch": "rollup -c rollup.config.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No unit tests for demo — run 'npm run bundle' to verify build\""
+  },
+  "dependencies": {
+    "@obinexusltd/obix": "^0.1.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "@types/node": "^20.0.0",
+    "rollup": "^4.0.0",
+    "@rollup/plugin-terser": "^0.4.0",
+    "tslib": "^2.6.0",
+    "typescript": "^5.4.0"
+  },
+  "keywords": ["obix", "libpolycall", "polygaltic", "demo"],
+  "author": "OBINexus <okpalan@protonmail.com>",
+  "license": "ISC"
+}
