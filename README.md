@@ -1,4 +1,4 @@
-\# OBIX Runtime Demo — Polygaltic
+# OBIX Runtime Demo — Polygaltic
 
 
 
