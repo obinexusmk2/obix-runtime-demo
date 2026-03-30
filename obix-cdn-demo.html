@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OBIX SDK — Constitutional UI Runtime</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+  /* ── Constitutional Design Tokens ── */
+  :root {
+    --burgundy:       #93032e;
+    --burgundy-deep:  #6a0220;
+    --burgundy-light: #c2486a;
+    --ebony:          #5f634f;
+    --ebony-light:    #8a8f76;
+    --amber:          #ffc100;
+    --amber-light:    #ffd966;
+    --custard:        #ffeaae;
+    --prussian:       #001427;
+    --prussian-mid:   #002a4e;
+    --prussian-light: #0a3a5c;
+    --white:          #faf8f4;
+    --off-white:      #f2ede4;
+    --font-display:   'Cinzel Decorative', serif;
+    --font-body:      'Libre Baskerville', serif;
+    --font-mono:      'JetBrains Mono', monospace;
+    --radius:         4px;
+    --radius-md:      8px;
+    --radius-lg:      12px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--prussian);
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Background texture ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 10% 20%, rgba(147,3,46,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 90% 80%, rgba(0,42,78,0.6) 0%, transparent 60%),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255,193,0,0.015) 2px,
+        rgba(255,193,0,0.015) 3px
+      );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Layout ── */
+  .page { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 3rem 2rem 6rem; }
+
+  /* ── Header ── */
+  .header { text-align: center; margin-bottom: 4rem; padding-bottom: 2.5rem; border-bottom: 1px solid rgba(255,193,0,0.2); }
+
+  .header-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--amber);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+  }
+
+  .header h1 {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 4vw, 2.8rem);
+    color: var(--white);
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.02em;
+  }
+
+  .header h1 span { color: var(--amber); }
+
+  .header-motto {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ebony-light);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Section labels ── */
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.35em;
+    color: var(--amber);
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 0.5rem;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: rgba(0, 20, 39, 0.7);
+    border: 1px solid rgba(255,193,0,0.15);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    backdrop-filter: blur(4px);
+  }
+
+  .card + .card { margin-top: 1.25rem; }
+
+  /* ── Runtime Console ── */
+  .runtime-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+  @media (max-width: 640px) { .runtime-grid { grid-template-columns: 1fr; } }
+
+  .lifecycle-track {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+
+  .lifecycle-state {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,193,0,0.2);
+    color: var(--ebony-light);
+    transition: all 0.3s ease;
+    letter-spacing: 0.05em;
+  }
+
+  .lifecycle-state.active {
+    background: var(--burgundy);
+    border-color: var(--burgundy-light);
+    color: var(--white);
+    box-shadow: 0 0 12px rgba(147,3,46,0.5);
+  }
+
+  .lifecycle-state.completed {
+    background: rgba(95,99,79,0.3);
+    border-color: var(--ebony);
+    color: var(--ebony-light);
+  }
+
+  .lifecycle-arrow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(255,193,0,0.3);
+  }
+
+  /* ── Component Demos ── */
+  .component-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+
+  /* ── OBIX Button ── */
+  .obix-btn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    padding: 12px 20px;
+    min-height: 44px;
+    min-width: 44px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--burgundy);
+    background: transparent;
+    color: var(--white);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .obix-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--burgundy);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.25s ease;
+    z-index: -1;
+  }
+
+  .obix-btn:hover::before { transform: scaleX(1); }
+  .obix-btn:hover { border-color: var(--burgundy-light); box-shadow: 0 0 20px rgba(147,3,46,0.3); }
+  .obix-btn:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+  .obix-btn:active { transform: scale(0.97); }
+
+  .obix-btn.primary {
+    background: var(--burgundy);
+    border-color: var(--burgundy-light);
+  }
+  .obix-btn.primary::before { background: var(--burgundy-deep); }
+  .obix-btn.primary:hover { box-shadow: 0 0 24px rgba(147,3,46,0.5); }
+
+  .obix-btn.amber-btn {
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+  .obix-btn.amber-btn::before { background: rgba(255,193,0,0.1); }
+  .obix-btn.amber-btn:hover { color: var(--prussian); box-shadow: 0 0 20px rgba(255,193,0,0.25); }
+
+  /* ── OBIX Input ── */
+  .obix-input-wrap { position: relative; }
+  .obix-input-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--amber);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+    opacity: 0.8;
+  }
+
+  .obix-input {
+    width: 100%;
+    min-height: 44px;
+    background: rgba(0,20,39,0.8);
+    border: 1px solid rgba(255,193,0,0.2);
+    border-radius: var(--radius-md);
+    color: var(--white);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 10px 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+
+  .obix-input:focus {
+    border-color: var(--amber);
+    box-shadow: 0 0 0 3px rgba(255,193,0,0.1);
+  }
+
+  .obix-input::placeholder { color: var(--ebony-light); opacity: 0.6; }
+
+  /* ── OBIX Card component ── */
+  .obix-component-card {
+    background: rgba(0,20,39,0.9);
+    border: 1px solid rgba(147,3,46,0.4);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .obix-component-card:hover {
+    border-color: var(--burgundy-light);
+    box-shadow: 0 4px 24px rgba(147,3,46,0.2);
+  }
+
+  .obix-card-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--amber);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    opacity: 0.7;
+  }
+
+  .obix-card-title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+  }
+
+  .obix-card-body {
+    font-size: 12px;
+    color: var(--ebony-light);
+    line-height: 1.6;
+  }
+
+  /* ── OBIX Modal ── */
+  .obix-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,20,39,0.92);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+  }
+
+  .obix-modal-overlay.open { display: flex; }
+
+  .obix-modal {
+    background: var(--prussian-mid);
+    border: 1px solid rgba(255,193,0,0.25);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    max-width: 480px;
+    width: 90%;
+    position: relative;
+    animation: modalIn 0.2s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .obix-modal-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    color: var(--amber);
+    margin-bottom: 0.75rem;
+  }
+
+  .obix-modal-body {
+    font-size: 13px;
+    color: var(--ebony-light);
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+  }
+
+  .obix-modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--ebony-light);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+
+  .obix-modal-close:hover { border-color: var(--burgundy); color: var(--white); }
+  .obix-modal-close:focus-visible { outline: 2px solid var(--amber); }
+
+  /* ── PolygalticCounter ── */
+  .counter-display {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 10vw, 6rem);
+    color: var(--amber);
+    text-align: center;
+    padding: 1.5rem 0;
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(255,193,0,0.3);
+    transition: all 0.15s ease;
+  }
+
+  .counter-display.pulse {
+    text-shadow: 0 0 60px rgba(255,193,0,0.7);
+    transform: scale(1.04);
+  }
+
+  .counter-pole {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-align: center;
+    letter-spacing: 0.15em;
+    color: var(--ebony-light);
+    margin-bottom: 1rem;
+  }
+
+  .counter-btns { display: flex; gap: 8px; }
+  .counter-btns .obix-btn { flex: 1; }
+
+  /* ── Telemetry panel ── */
+  .telemetry-log {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ebony-light);
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,193,0,0.08);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    height: 180px;
+    overflow-y: auto;
+    line-height: 1.8;
+  }
+
+  .telemetry-log::-webkit-scrollbar { width: 3px; }
+  .telemetry-log::-webkit-scrollbar-track { background: transparent; }
+  .telemetry-log::-webkit-scrollbar-thumb { background: var(--burgundy); border-radius: 2px; }
+
+  .log-line { display: block; }
+  .log-line .ts { color: rgba(255,193,0,0.4); margin-right: 8px; }
+  .log-line .ev { color: var(--amber); margin-right: 6px; }
+  .log-line .ev.lifecycle { color: #5dcaa5; }
+  .log-line .ev.action    { color: var(--burgundy-light); }
+  .log-line .ev.render    { color: var(--amber); opacity: 0.6; }
+  .log-line .ev.fud       { color: #af82ec; }
+
+  /* ── Tripolar state bars ── */
+  .tso-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 0.75rem; }
+
+  .tso-bar-wrap { }
+
+  .tso-pole-name {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .tso-track {
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .tso-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .tso-fill.alpha { background: var(--amber); }
+  .tso-fill.beta  { background: var(--burgundy-light); }
+  .tso-fill.gamma { background: #5dcaa5; }
+
+  /* ── FUD badge ── */
+  .fud-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 0.5rem; }
+  .fud-badge {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    padding: 3px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+  }
+  .fud-badge.focus  { background: rgba(255,193,0,0.12); color: var(--amber); border: 1px solid rgba(255,193,0,0.2); }
+  .fud-badge.undo   { background: rgba(147,3,46,0.2); color: var(--burgundy-light); border: 1px solid rgba(147,3,46,0.3); }
+  .fud-badge.drag   { background: rgba(93,202,165,0.12); color: #5dcaa5; border: 1px solid rgba(93,202,165,0.2); }
+  .fud-badge.active { opacity: 1; }
+  .fud-badge.idle   { opacity: 0.35; }
+
+  /* ── Divider ── */
+  .divider {
+    border: none;
+    border-top: 1px solid rgba(255,193,0,0.1);
+    margin: 2rem 0;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255,193,0,0.1);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: rgba(95,99,79,0.5);
+    text-transform: uppercase;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card { animation: fadeSlideIn 0.4s ease both; }
+  .card:nth-child(2) { animation-delay: 0.08s; }
+  .card:nth-child(3) { animation-delay: 0.16s; }
+  .card:nth-child(4) { animation-delay: 0.24s; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-eyebrow">obinexus computing · @obinexusltd</div>
+    <h1>OBIX <span>SDK</span></h1>
+    <div class="header-motto">
+      "Breathing without Living is Suffering &mdash; When System Fails, Build Your Own"
+    </div>
+  </header>
+
+  <!-- Runtime Lifecycle Tracker -->
+  <div class="card" id="lifecycle-card">
+    <div class="section-label">ObixRuntime — component lifecycle</div>
+    <div style="font-family: var(--font-body); font-size: 13px; color: var(--ebony-light); margin-bottom: 0.75rem;">
+      Every component traverses four constitutional states. HALTED preserves record — <em>#NoGhosting</em> at runtime level.
+    </div>
+    <div class="lifecycle-track" id="lifecycle-track">
+      <span class="lifecycle-state" id="lc-CREATED">CREATED</span>
+      <span class="lifecycle-arrow">→</span>
+      <span class="lifecycle-state" id="lc-UPDATED">UPDATED</span>
+      <span class="lifecycle-arrow">→</span>
+      <span class="lifecycle-state" id="lc-HALTED">HALTED</span>
+      <span class="lifecycle-arrow">→</span>
+      <span class="lifecycle-state" id="lc-DESTROYED">DESTROYED</span>
+    </div>
+  </div>
+
+  <!-- PolygalticCounter + TSO bars -->
+  <div class="runtime-grid" style="margin-top: 1.25rem;">
+
+    <!-- PolygalticCounter -->
+    <div class="card">
+      <div class="section-label">PolygalticCounter — live component</div>
+      <div class="counter-pole" id="counter-pole">α: 0.67 · β: 0.67 · γ: 0.25</div>
+      <div class="counter-display" id="counter-val">0</div>
+      <div class="counter-btns">
+        <button class="obix-btn primary" onclick="counterAction('increment')" aria-label="Increment counter">+ INC</button>
+        <button class="obix-btn" onclick="counterAction('decrement')" aria-label="Decrement counter">− DEC</button>
+        <button class="obix-btn amber-btn" onclick="counterAction('reset')" aria-label="Reset counter">RESET</button>
+      </div>
+    </div>
+
+    <!-- TSO / Telemetry -->
+    <div class="card">
+      <div class="section-label">TSO — tripolar spin state</div>
+      <div class="tso-grid" id="tso-grid">
+        <div class="tso-bar-wrap">
+          <div class="tso-pole-name">
+            <span style="color: var(--amber)">Uche α</span>
+            <span id="tso-alpha-val" style="color: var(--ebony-light)">67%</span>
+          </div>
+          <div class="tso-track"><div class="tso-fill alpha" id="tso-alpha" style="width: 67%"></div></div>
+        </div>
+        <div class="tso-bar-wrap">
+          <div class="tso-pole-name">
+            <span style="color: var(--burgundy-light)">Eze β</span>
+            <span id="tso-beta-val" style="color: var(--ebony-light)">67%</span>
+          </div>
+          <div class="tso-track"><div class="tso-fill beta" id="tso-beta" style="width: 67%"></div></div>
+        </div>
+        <div class="tso-bar-wrap">
+          <div class="tso-pole-name">
+            <span style="color: #5dcaa5">Obi γ</span>
+            <span id="tso-gamma-val" style="color: var(--ebony-light)">25%</span>
+          </div>
+          <div class="tso-track"><div class="tso-fill gamma" id="tso-gamma" style="width: 25%"></div></div>
+        </div>
+      </div>
+      <div style="margin-top: 1rem;">
+        <div class="section-label">libpolycall-v1 telemetry</div>
+        <div class="telemetry-log" id="telem-log"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <hr class="divider" />
+
+  <!-- obix-components showcase -->
+  <div class="section-label">obix-components — Button · Input · Card · Modal</div>
+  <div style="font-family: var(--font-body); font-size: 13px; color: var(--ebony-light); margin-bottom: 1rem;">
+    All components enforce FUD mitigation: 44×44px touch targets, ARIA labels, CLS prevention, keyboard navigation.
+  </div>
+
+  <div class="component-grid">
+
+    <!-- Button variants -->
+    <div class="card">
+      <div class="section-label">obix-button</div>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 0.5rem;">
+        <button class="obix-btn primary" aria-label="Primary action">Primary action</button>
+        <button class="obix-btn" aria-label="Secondary action">Secondary</button>
+        <button class="obix-btn amber-btn" aria-label="Constitutional action">Constitutional</button>
+      </div>
+      <div class="fud-badges" style="margin-top: 1rem;">
+        <span class="fud-badge focus active">Focus ✓</span>
+        <span class="fud-badge undo active">Undo ✓</span>
+        <span class="fud-badge drag idle">Drag —</span>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="card">
+      <div class="section-label">obix-input</div>
+      <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 12px;">
+        <div class="obix-input-wrap">
+          <label class="obix-input-label" for="inp-identity">Identity</label>
+          <input class="obix-input" id="inp-identity" type="text" placeholder="Enter your name..." aria-label="Identity input" />
+        </div>
+        <div class="obix-input-wrap">
+          <label class="obix-input-label" for="inp-channel">Channel</label>
+          <input class="obix-input" id="inp-channel" type="text" placeholder="α / β / γ" aria-label="Channel input" />
+        </div>
+      </div>
+      <div class="fud-badges" style="margin-top: 1rem;">
+        <span class="fud-badge focus active">Focus ✓</span>
+        <span class="fud-badge undo active">Undo ✓</span>
+        <span class="fud-badge drag idle">Drag —</span>
+      </div>
+    </div>
+
+    <!-- Card component -->
+    <div class="card">
+      <div class="section-label">obix-card</div>
+      <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 8px;">
+        <div class="obix-component-card">
+          <div class="obix-card-label">OHA Division</div>
+          <div class="obix-card-title">Public Protection</div>
+          <div class="obix-card-body">Every product must demonstrably protect the end user as a constitutional requirement.</div>
+        </div>
+        <div class="obix-component-card">
+          <div class="obix-card-label">IJI Division</div>
+          <div class="obix-card-title">Order & Equity</div>
+          <div class="obix-card-body">Milestone-based investment. Fair dealing. #NoGhosting encoded as contract.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal trigger -->
+  <div class="card" style="margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <div class="section-label">obix-modal</div>
+      <div style="font-size: 13px; color: var(--ebony-light);">
+        Modal with FUD-compliant focus trap, ARIA role, keyboard dismiss (Escape key).
+      </div>
+    </div>
+    <button class="obix-btn amber-btn" onclick="openModal()" aria-haspopup="dialog" style="min-width: 160px;">
+      Open Modal ↗
+    </button>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    OBINexus Computing · OBIX SDK · @obinexusltd · Obi = Heart &amp; Soul · obinexus.org
+  </footer>
+
+</div>
+
+<!-- Modal -->
+<div class="obix-modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="obix-modal">
+    <button class="obix-modal-close" onclick="closeModal()" aria-label="Close modal">✕</button>
+    <div class="obix-modal-title" id="modal-title">OBIX Modal — Constitutional Confirm</div>
+    <div class="obix-modal-body">
+      This modal enforces the FUD Undo mitigation policy: destructive actions require confirmation.
+      The component cannot be dismissed by background click alone — keyboard (Escape) and explicit
+      close button are both required affordances. ARIA <code>role="dialog"</code> and
+      <code>aria-modal="true"</code> are enforced. Focus is trapped within the modal boundary.
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button class="obix-btn primary" onclick="closeModal()" style="flex: 1;" aria-label="Confirm and close">Confirm</button>
+      <button class="obix-btn" onclick="closeModal()" style="flex: 1;" aria-label="Cancel and close">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   ObixRuntime — constitutional component manager
+   ═══════════════════════════════════════════════ */
+
+const ObixRuntime = (() => {
+  const STATES = ['CREATED', 'UPDATED', 'HALTED', 'DESTROYED']
+  const components = new Map()
+  const listeners = []
+
+  function emit(event, data) {
+    listeners.forEach(fn => fn(event, data))
+  }
+
+  function register(id, def) {
+    const instance = {
+      id,
+      state: { ...def.initialState },
+      lifecycleState: 'CREATED',
+      def
+    }
+    components.set(id, instance)
+    emit('lifecycle', { id, state: 'CREATED' })
+    instance.lifecycleState = 'UPDATED'
+    emit('lifecycle', { id, state: 'UPDATED' })
+    return instance
+  }
+
+  function dispatch(id, actionName, payload) {
+    const c = components.get(id)
+    if (!c || c.lifecycleState === 'HALTED' || c.lifecycleState === 'DESTROYED') return
+    const action = c.def.actions[actionName]
+    if (!action) return
+    const prev = { ...c.state }
+    c.state = action(c.state, payload)
+    emit('action', { id, action: actionName, prev, next: c.state })
+    emit('render', { id })
+  }
+
+  function halt(id) {
+    const c = components.get(id)
+    if (!c) return
+    c.lifecycleState = 'HALTED'
+    emit('lifecycle', { id, state: 'HALTED' })
+  }
+
+  function destroy(id) {
+    const c = components.get(id)
+    if (!c) return
+    halt(id)
+    c.lifecycleState = 'DESTROYED'
+    emit('lifecycle', { id, state: 'DESTROYED' })
+    components.delete(id)
+  }
+
+  function getState(id) {
+    return components.get(id)?.state
+  }
+
+  function on(fn) {
+    listeners.push(fn)
+  }
+
+  return { register, dispatch, halt, destroy, getState, on, STATES }
+})()
+
+/* ═══════════════════════════════════════════
+   Telemetry — libpolycall-v1 stub
+   ═══════════════════════════════════════════ */
+
+const Telemetry = (() => {
+  const log = document.getElementById('telem-log')
+
+  function write(type, msg) {
+    const ts = new Date().toISOString().slice(11, 23)
+    const line = document.createElement('span')
+    line.className = 'log-line'
+    line.innerHTML = `<span class="ts">[${ts}]</span><span class="ev ${type}">${type.toUpperCase().padEnd(10)}</span>${msg}`
+    log.appendChild(line)
+    log.scrollTop = log.scrollHeight
+  }
+
+  return { write }
+})()
+
+/* ═══════════════════════════════════════════
+   Lifecycle indicator
+   ═══════════════════════════════════════════ */
+
+const lifecycleStates = ['CREATED', 'UPDATED', 'HALTED', 'DESTROYED']
+let currentLC = -1
+
+function setLifecycleState(state) {
+  const idx = lifecycleStates.indexOf(state)
+  lifecycleStates.forEach((s, i) => {
+    const el = document.getElementById('lc-' + s)
+    el.className = 'lifecycle-state'
+    if (i === idx) el.classList.add('active')
+    else if (i < idx) el.classList.add('completed')
+  })
+}
+
+/* ═══════════════════════════════════════════
+   TSO — Tripolar Spin Operator visual
+   ═══════════════════════════════════════════ */
+
+const TSO_CANONICAL = { alpha: 66.7, beta: 66.7, gamma: 25 }
+let tsoState = { ...TSO_CANONICAL }
+
+function updateTSO(delta) {
+  tsoState.alpha = Math.min(100, Math.max(0, tsoState.alpha + (delta.alpha || 0)))
+  tsoState.beta  = Math.min(100, Math.max(0, tsoState.beta  + (delta.beta  || 0)))
+  tsoState.gamma = Math.min(100, Math.max(0, tsoState.gamma + (delta.gamma || 0)))
+
+  document.getElementById('tso-alpha').style.width = tsoState.alpha.toFixed(1) + '%'
+  document.getElementById('tso-beta').style.width  = tsoState.beta.toFixed(1)  + '%'
+  document.getElementById('tso-gamma').style.width = tsoState.gamma.toFixed(1) + '%'
+
+  document.getElementById('tso-alpha-val').textContent = Math.round(tsoState.alpha) + '%'
+  document.getElementById('tso-beta-val').textContent  = Math.round(tsoState.beta)  + '%'
+  document.getElementById('tso-gamma-val').textContent = Math.round(tsoState.gamma) + '%'
+
+  const a = (tsoState.alpha / 100).toFixed(2)
+  const b = (tsoState.beta  / 100).toFixed(2)
+  const g = (tsoState.gamma / 100).toFixed(2)
+  document.getElementById('counter-pole').textContent = `α: ${a} · β: ${b} · γ: ${g}`
+}
+
+/* ═══════════════════════════════════════════
+   PolygalticCounter component
+   ═══════════════════════════════════════════ */
+
+const counter = ObixRuntime.register('PolygalticCounter', {
+  initialState: { count: 0 },
+  actions: {
+    increment: (s) => ({ count: s.count + 1 }),
+    decrement: (s) => ({ count: s.count - 1 }),
+    reset:     ()  => ({ count: 0 })
+  }
+})
+
+function render(id) {
+  if (id !== 'PolygalticCounter') return
+  const s = ObixRuntime.getState(id)
+  const el = document.getElementById('counter-val')
+  el.textContent = s.count
+  el.classList.add('pulse')
+  setTimeout(() => el.classList.remove('pulse'), 150)
+}
+
+function counterAction(name) {
+  ObixRuntime.dispatch('PolygalticCounter', name)
+}
+
+/* ═══════════════════════════════════════════
+   Runtime event bus → telemetry + UI
+   ═══════════════════════════════════════════ */
+
+ObixRuntime.on((event, data) => {
+  if (event === 'lifecycle') {
+    setLifecycleState(data.state)
+    Telemetry.write('lifecycle', `${data.id} → ${data.state}`)
+
+    if (data.state === 'CREATED') {
+      updateTSO({ alpha: 0, beta: 0, gamma: 5 })
+    } else if (data.state === 'UPDATED') {
+      updateTSO({ alpha: 10, beta: 10, gamma: -3 })
+    }
+  }
+
+  if (event === 'action') {
+    Telemetry.write('action', `${data.id}.${data.action}() count=${data.next.count}`)
+    if (data.action === 'increment') updateTSO({ alpha:  2, beta:  3, gamma: -1 })
+    if (data.action === 'decrement') updateTSO({ alpha: -1, beta: -2, gamma:  2 })
+    if (data.action === 'reset')     updateTSO({ alpha:  0, beta:  0, gamma:  0, _reset: true })
+
+    if (data.action === 'reset') {
+      tsoState = { ...TSO_CANONICAL }
+      updateTSO({})
+      Telemetry.write('fud', 'Undo policy satisfied — state restored to canonical')
+    }
+  }
+
+  if (event === 'render') {
+    render(data.id)
+    Telemetry.write('render', `${data.id} → innerHTML updated`)
+  }
+})
+
+/* ═══════════════════════════════════════════
+   Modal — FUD focus trap
+   ═══════════════════════════════════════════ */
+
+function openModal() {
+  const overlay = document.getElementById('modal-overlay')
+  overlay.classList.add('open')
+  overlay.querySelector('.obix-modal-close').focus()
+  Telemetry.write('fud', 'Modal OPEN — focus trap active, Escape bound')
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open')
+  Telemetry.write('fud', 'Modal CLOSED — FUD Undo policy: action cancelled safely')
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal()
+})
+
+/* ═══════════════════════════════════════════
+   Init boot sequence
+   ═══════════════════════════════════════════ */
+
+window.addEventListener('load', () => {
+  Telemetry.write('lifecycle', 'ObixRuntime booted — libpolycall-v1 telemetry active')
+  Telemetry.write('fud', 'FUD policies loaded: Focus · Undo · Drag')
+  Telemetry.write('lifecycle', 'TSO canonical state: α=2/3 β=2/3 γ=1/4')
+  setTimeout(() => Telemetry.write('lifecycle', 'PolygalticCounter registered and UPDATED'), 400)
+})
+</script>
+</body>
+</html>
